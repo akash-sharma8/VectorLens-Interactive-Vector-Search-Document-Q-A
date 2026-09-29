@@ -1,0 +1,59 @@
+---> ye firse smj n aa rha Step D: jis category ke keywords mile, uske coordinates increase karo
+
+Relevant code:
+
+const max = Math.max(...Object.values(scores), 0.01);
+
+const base = Math.min(
+  score / max * 0.88,
+  0.94
+);
+
+CS ke liye:
+
+score = 0.70
+max   = 0.70
+
+base = (0.70 / 0.70) × 0.88
+     = 0.88
+
+Ab four factors:
+
+[1, 1, 0.92, 0.87]
+
+Base se multiply:
+
+0.88 × 1    = 0.8800
+0.88 × 1    = 0.8800
+0.88 × 0.92 = 0.8096
+0.88 × 0.87 = 0.7656
+
+Without jitter, vector:
+
+[
+  0.88, 0.88, 0.8096, 0.7656,
+  0.08, 0.08, 0.08, 0.08,
+  0.08, 0.08, 0.08, 0.08,
+  0.08, 0.08, 0.08, 0.08
+]
+
+Step E: jitter = tiny variation
+
+Jitter approximately -0.02 se +0.02 ke beech chhota number add karta hai.
+
+Tumhare request mein:
+
+[
+  0.8884614488,
+  0.8625093376,
+  0.8142863026,
+  0.7628600946,
+  // Remaining coordinates 0.08]
+
+
+-login authentication
+-postgres:
+    - users(auth)
+    - chats + metadata
+    -> pgvector extension provide similarity search
+    

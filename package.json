@@ -1,0 +1,29 @@
+{
+  "name": "vectordb-typescript",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c cyan,magenta \"npm run dev -w @vectordb/api\" \"npm run dev -w @vectordb/web\"",
+    "build": "npm run typecheck && npm run build -w @vectordb/web",
+    "start": "concurrently -k -n API,WEB \"npm run start -w @vectordb/api\" \"npm run start -w @vectordb/web\"",
+    "typecheck": "tsc --noEmit && npm run typecheck -w @vectordb/web",
+    "test": "vitest run",
+    "test:browser": "playwright test",
+    "test:http": "node scripts/http-smoke.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.15.0",
+    "concurrently": "^9.2.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
