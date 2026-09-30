@@ -61,7 +61,14 @@ export async function extractPdf(buffer: Buffer) {
       );
     }
 
-    return { text, pages: pdf.numPages };
+    return {
+  text,
+  pages: pdf.numPages,
+  pageTexts: pages.map((text, index) => ({
+    pageNumber: index + 1,
+    text,
+  })),
+};
   } catch (error) {
     if (error instanceof ApiError) throw error;
 

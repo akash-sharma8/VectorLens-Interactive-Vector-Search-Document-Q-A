@@ -39,33 +39,47 @@ export class VectorDB {
     return [...this.store.values()];
   }
 
-  insert(
-    metadata: string,
-    category: Category,
-    embedding: number[],
-    documentId?: number,
-  ) {
-    assertVector(embedding, this.dims);
+insert(
+  metadata: string,
+  category: Category,
+  embedding: number[],
+  documentId?: number,
+  persistedId?: number,
+) {
+  assertVector(embedding, this.dims);
 
-    const item: VectorItem = {
-      id: this.nextId++,
-      metadata,
-      category,
-      embedding: [...embedding],
-      ...(documentId !== undefined ? { documentId } : {}),
-    };
+  const id = persistedId ?? this.nextId;
 
-    this.store.set(item.id, item);
-
-    this.bf.insert(item);
-    this.kd.insert(item);
-
-    for (const graph of Object.values(this.graphs)) {
-      graph.insert(item);
-    }
-
-    return item.id;
+  if (!Number.isSafeInteger(id) || id < 1) {
+    throw new Error("Invalid vector ID.");
   }
+
+  if (this.store.has(id)) {
+    throw new Error(`Vector ID ${id} already exists.`);
+  }
+
+  const item: VectorItem = {
+    id,
+    metadata,
+    category,
+    embedding: [...embedding],
+
+    ...(documentId !== undefined ? { documentId } : {}),
+  };
+
+  this.store.set(id, item);
+
+  this.bf.insert(item);
+  this.kd.insert(item);
+
+  for (const graph of Object.values(this.graphs)) {
+    graph.insert(item);
+  }
+
+  this.nextId = Math.max(this.nextId, id + 1);
+
+  return id;
+}
 
   remove(id: number) {
     if (!this.store.delete(id)) {

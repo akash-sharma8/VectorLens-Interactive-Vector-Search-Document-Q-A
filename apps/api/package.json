@@ -5,16 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch --import tsx src/server.ts",
-    "start": "node --import tsx src/server.ts"
+    "start": "node --import tsx src/server.ts",
+    "db:migrate": "node --import tsx src/migrate.ts",
+    "db:verify-storage": "node --import tsx src/verify-document-storage.ts",
+    "db:inspect": "node --import tsx src/inspect-document-storage.ts",
+    "db:claim-legacy": "node --import tsx src/claim-legacy.ts"
   },
   "dependencies": {
     "@vectordb/core": "1.0.0",
     "dotenv": "^16.6.0",
     "express": "^5.1.0",
     "pdfjs-dist": "^6.3.289",
+    "pg": "^8.23.0",
     "zod": "^3.25.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "@types/pg": "^8.23.1"
   }
 }

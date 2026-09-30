@@ -10,7 +10,9 @@ export async function api<T>(
     response = await fetch(`/api${path}`, {
       method: method || (body === undefined ? 'GET' : 'POST'),
 
+      credentials: 'include',
       headers: {
+        'X-Requested-With': 'VectorDB',
         'Content-Type': isFile
           ? 'application/pdf'
           : 'application/json',
@@ -30,6 +32,7 @@ export async function api<T>(
     );
   }
 
+  if (response.status === 401 && !path.startsWith('/auth/')) window.dispatchEvent(new Event('session-expired'));
   let data: unknown;
 
   try {

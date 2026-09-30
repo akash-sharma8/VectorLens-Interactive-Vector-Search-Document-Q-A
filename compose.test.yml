@@ -1,0 +1,20 @@
+name: vectordb-verification
+services:
+  db:
+    image: pgvector/pgvector:0.8.6-pg16
+    container_name: vectordb-verification-test
+    environment:
+      POSTGRES_USER: vectordb
+      POSTGRES_PASSWORD: vectordb_test_only
+      POSTGRES_DB: vectordb_test
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - verification_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vectordb -d vectordb_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+volumes:
+  verification_data:

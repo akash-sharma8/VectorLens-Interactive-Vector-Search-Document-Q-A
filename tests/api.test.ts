@@ -5,7 +5,7 @@ import {
   expect,
   it,
 } from "vitest";
-
+import { vi } from "vitest";
 import { createApp } from "../apps/api/src/app.ts";
 import type { AIProvider } from "../apps/api/src/ollama.ts";
 import { ApiError } from "../apps/api/src/ollama.ts";
@@ -40,12 +40,12 @@ class TestAI implements AIProvider {
     return text.includes("irrelevant")
       ? [-1, 0]
       : Array.from(
-          {
-            length: this.dimension,
-          },
-          (_, i) =>
-            i === 0 ? 1 : 0,
-        );
+        {
+          length: this.dimension,
+        },
+        (_, i) =>
+          i === 0 ? 1 : 0,
+      );
   }
 
   async generate(prompt: string) {
@@ -56,7 +56,7 @@ class TestAI implements AIProvider {
 }
 
 const ai = new TestAI();
-const { app, db, docs } = createApp(ai);
+const { app, db, docs } = createApp(ai, { documentStorage: "memory" })
 
 let server: Server;
 let origin: string;
@@ -72,10 +72,9 @@ beforeAll(async () => {
     },
   );
 
-  origin = `http://127.0.0.1:${
-    (server.address() as AddressInfo)
+  origin = `http://127.0.0.1:${(server.address() as AddressInfo)
       .port
-  }`;
+    }`;
 });
 
 afterAll(
@@ -111,8 +110,8 @@ async function request(
       ...(body === undefined
         ? {}
         : {
-            body: JSON.stringify(body),
-          }),
+          body: JSON.stringify(body),
+        }),
     },
   );
 
@@ -184,6 +183,34 @@ describe(
       },
     );
 
+    it("skips generation when document-only mode has no matches", async () => {
+      const generate = vi.spyOn(ai, "generate")
+        .mockResolvedValue("This must not be used.");
+
+      try {
+        // Existing TestAI maps questions containing "irrelevant"
+        // to an embedding opposite to the stored test vectors.
+        const result = await request("/doc/ask", {
+          question: "irrelevant question",
+          k: 3,
+          documentsOnly: true,
+        });
+
+        expect(result.status).toBe(200);
+        expect(result.data.contexts).toEqual([]);
+        expect(result.data.documentsOnly).toBe(true);
+        expect(result.data.generated).toBe(false);
+
+        expect(result.data.answer).toContain(
+          "could not find relevant information",
+        );
+
+        expect(generate).not.toHaveBeenCalled();
+      } finally {
+        generate.mockRestore();
+      }
+    });
+
     it(
       "rejects bad dimensions, empty coordinates, metrics, k, and JSON",
       async () => {
@@ -198,9 +225,9 @@ describe(
           `/search?v=${v}&metric=bad`,
           `/search?v=${v}&k=-1`,
           "/search?v=" +
-            Array(16)
-              .fill("")
-              .join(","),
+          Array(16)
+            .fill("")
+            .join(","),
         ]) {
           expect(
             (await request(path))

@@ -1,6 +1,7 @@
 // TEST ONLY: deterministic HTTP fixture for browser verification. Not used by the app.
 import { createServer } from "node:http";
 
+let failedOnce = false;
 const server = createServer(
   async (req, res) => {
     res.setHeader(
@@ -46,10 +47,13 @@ const server = createServer(
     if (
       req.url === "/api/generate"
     ) {
+      if (body.prompt?.includes('fixture-generation-failure') && !failedOnce) {
+        failedOnce = true; res.statusCode = 503; return res.end(JSON.stringify({error:'Injected generation failure'}));
+      }
       return res.end(
         JSON.stringify({
           response:
-            "[TEST FIXTURE] Dynamic programming stores solutions to overlapping subproblems. This verifies the application flow, not real model quality.",
+            "[TEST FIXTURE] Dynamic programming stores solutions to overlapping subproblems [1]. This verifies the application flow, not real model quality.",
         }),
       );
     }

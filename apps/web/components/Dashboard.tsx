@@ -4,10 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
   Algorithm,
-  Answer,
   Benchmark,
   Category,
-  Context,
   DocSummary,
   GraphInfo,
   Metric,
@@ -18,6 +16,8 @@ import type {
 import { textToEmbedding } from '@vectordb/core/demo';
 import ScatterPlot, { COLORS, EmbeddingChart } from './ScatterPlot';
 import { api, errorMessage } from './api';
+import {ThemeToggle} from './ThemeProvider';
+import ChatPanel, { type SourceProjection } from './ChatPanel';
 
 
 const ALGORITHMS: {
@@ -40,29 +40,43 @@ const CATEGORIES: {
   label: string
 }[] = [{ id: 'cs', label: 'CS / Algorithms' }, { id: 'math', label: 'Mathematics' }, { id: 'food', label: 'Food & Cooking' }, { id: 'sports', label: 'Sports & Games' }, { id: 'doc', label: 'Documents (RAG)' }];
 const latency = (us: number) => us < 1000 ? `${us.toFixed(1)} μs` : `${(us / 1000).toFixed(2)} ms`;
-function Section({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) { return <section className={className}><h2 className="sec">{title}</h2>{children}</section>; }
-function TypedAnswer({ text }: { text: string }) {
-  const [length, setLength] = useState(0);
-  useEffect(() => {
-    setLength(0); if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setLength(text.length); return; }
-    const start = performance.now(), duration = Math.min(4500, text.length * 6);
-    const timer = setInterval(() => { const n = Math.min(text.length, Math.ceil((performance.now() - start) / Math.max(1, duration) * text.length)); setLength(n); if (n === text.length) clearInterval(timer); }, 18);
-    return () => clearInterval(timer);
-  }, [text]);
-  return <><p className={`chat-a-text ${length < text.length ? 'typing' : ''}`} aria-hidden="true">{text.slice(0, length)}</p><p className="sr-only">{text}</p></>;
+function sourcePageLabel(source: {
+  pageStart?: number | null;
+  pageEnd?: number | null;
+}) {
+  const start = source.pageStart;
+  const end = source.pageEnd;
+
+  if (start == null || end == null) {
+    return "Page reference unavailable";
+  }
+
+  return start === end
+    ? `PDF page ${start}`
+    : `PDF pages ${start}–${end}`;
 }
-export default function Dashboard() {
+function Section({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) { return <section className={className}><h2 className="sec">{title}</h2>{children}</section>; }
+export default function Dashboard({accountControls}:{accountControls:React.ReactNode}) {
+
   const [items, setItems] = useState<VectorItem[]>([]), [loaded, setLoaded] = useState(false);
   const [graph, setGraph] = useState<GraphInfo | null>(null), [status, setStatus] = useState<Status | null>(null), [documents, setDocuments] = useState<DocSummary[]>([]);
   const [tab, setTab] = useState<'search' | 'docs' | 'rag'>('search');
   const [query, setQuery] = useState(''), [algo, setAlgo] = useState<Algorithm>('hnsw'), [metric, setMetric] = useState<Metric>('cosine'), [k, setK] = useState(5);
   const [result, setResult] = useState<SearchResult | null>(null), [embedding, setEmbedding] = useState<number[] | null>(null), [benchmark, setBenchmark] = useState<Benchmark | null>(null);
   const [hitIds, setHitIds] = useState<number[]>([]), [hoverId, setHoverId] = useState<number | null>(null), [queryLabel, setQueryLabel] = useState('');
+  const [sourceProjection,setSourceProjection]=useState<SourceProjection|null>(null);
+  const projectionSources=sourceProjection?.contexts??[];
+  const sourceMarkerIds=[...new Set(projectionSources.flatMap(source=>{
+    if(!documents.some(chunk=>chunk.id===source.id))return [];
+    const marker=items.find(item=>item.documentId===source.documentId);
+    return marker?[marker.id]:[];
+  }))];
   const [metadata, setMetadata] = useState(''), [category, setCategory] = useState<Category>('cs');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const pdfInput = useRef<HTMLInputElement>(null);
+  const [selectedDocumentIds, setSelectedDocumentIds] =
+    useState<number[]>([]);
   const [title, setTitle] = useState(''), [docText, setDocText] = useState(''), [insertStatus, setInsertStatus] = useState('');
-  const [question, setQuestion] = useState(''), [ragK, setRagK] = useState(3), [asked, setAsked] = useState(''), [answer, setAnswer] = useState<Answer | null>(null);
   const [busy, setBusy] = useState(''), [error, setError] = useState('');
   const busyRef = useRef(false), metricRef = useRef(metric); metricRef.current = metric;
   const refreshStatus = useCallback(async () => { setStatus(await api<Status>('/status')); }, []);
@@ -78,6 +92,30 @@ export default function Dashboard() {
   }, []);
   useEffect(() => { let active = true; api<GraphInfo>(`/hnsw-info?metric=${metric}`).then(info => { if (active) setGraph(info); }).catch(err => { if (active) setError(errorMessage(err)); }); return () => { active = false; }; }, [metric]);
 
+  // Existing documents array contains chunks.
+  // Collapse them into one entry per document.
+  const availableDocuments = Array.from(
+    new Map(
+      documents.map(chunk => [
+        chunk.documentId,
+        {
+          id: chunk.documentId,
+          title: chunk.title,
+        },
+      ]),
+    ).values(),
+  );
+
+  const toggleDocument = (id: number) => {
+    setSelectedDocumentIds(current =>
+      current.includes(id)
+        ? current.filter(value => value !== id)
+        : [...current, id],
+    );
+
+    setHitIds([]);
+    setQueryLabel("");
+  };
 
   const perform = async (name: string, fn: () => Promise<void>) => {
     if (busyRef.current) return;
@@ -155,6 +193,7 @@ export default function Dashboard() {
       ? await api<InsertResult>(
         `/doc/upload?${new URLSearchParams({
           title: documentTitle,
+          filename: pdfFile.name,
         })}`,
         pdfFile
       )
@@ -175,9 +214,6 @@ export default function Dashboard() {
       pdfInput.current.value = '';
     }
 
-    setQuestion(`What are the main points in ${documentTitle}?`);
-    setAnswer(null);
-    setAsked('');
     clearSearch();
 
     await Promise.all([
@@ -186,23 +222,13 @@ export default function Dashboard() {
     ]);
   });
   const deleteDocument = (id: number) => perform('delete', async () => {
-    await api(`/doc/delete/${id}`, undefined, 'DELETE'); clearSearch(); setAnswer(null); setAsked(''); await Promise.all([refreshData(), refreshStatus()]);
+    await api(`/doc/delete/${id}`, undefined, 'DELETE'); clearSearch(); await Promise.all([refreshData(), refreshStatus()]);
   });
-  const highlightContexts = (contexts: Context[], label: string) => {
-    const mapped = contexts.map(c => items.find(v => v.documentId === c.documentId)?.id).filter((id): id is number => id !== undefined);
-    setHitIds([...new Set(mapped)]); setQueryLabel(label);
-  };
-  const askAI = () => perform('ask', async () => {
-    const text = question.trim(); if (!text) throw new Error('Enter a question.'); setAsked(text); setAnswer(null); setHitIds([]); setQueryLabel('');
-    // Same retrieval-preview behavior as the original, with IDs instead of title-prefix matching.
-    const preview = api<{ contexts: Context[] }>('/doc/search', { question: text, k: ragK }).then(data => highlightContexts(data.contexts, text)).catch(() => { });
-    try {
-      const data = await api<Answer>('/doc/ask', { question: text, k: ragK }); await preview; setAnswer(data); highlightContexts(data.contexts, text); setQuestion('');
-      if (!data.contexts.length) { const vector = textToEmbedding(text); const fallback = await api<SearchResult>(`/search?${new URLSearchParams({ v: vector.join(','), k: '3', metric: 'cosine', algo: 'hnsw' })}`); setHitIds(fallback.results.map(v => v.id)); setQueryLabel(text); }
-    } finally { await preview; }
-  });
-  return <div className="app-shell">
-    <header><h1>AI Flow</h1><span className="badge hl">HNSW</span><span className="badge">KD-TREE</span><span className="badge">BRUTE FORCE</span><span className={`badge ${status?.modelsReady ? 'ok' : status ? 'err' : ''}`} title={status?.missingModels.join(', ')}>{status ? status.modelsReady ? 'OLLAMA ✓' : status.ollamaAvailable ? 'MODELS MISSING' : 'OLLAMA ✗' : 'OLLAMA…'}</span><span id="statsLabel">{loaded ? `${items.length} vectors · 16 dims` : 'Connecting…'}</span></header>
+  return <div className={`app-shell ${tab === 'rag' ? 'chat-mode' : ''}`}>
+    <header className="app-navbar"><nav className="navbar-inner" aria-label="Main navigation">
+      <div className="navbar-brand"><h1>AI Flow</h1><div className="navbar-algorithms"><span className="badge hl">HNSW</span><span className="badge">KD-TREE</span><span className="badge">BRUTE FORCE</span></div><span className={`badge ${status?.modelsReady ? 'ok' : status ? 'err' : ''}`} title={status?.missingModels.join(', ')}>{status ? status.modelsReady ? 'OLLAMA ✓' : status.ollamaAvailable ? 'MODELS MISSING' : 'OLLAMA ✗' : 'OLLAMA…'}</span></div>
+      <div className="navbar-actions"><span id="statsLabel">{loaded ? `${items.length} vectors · 16 dims` : 'Connecting…'}</span><ThemeToggle/>{accountControls}</div>
+    </nav></header>
     {error && <div className="notice" role="alert"><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError('')}>×</button></div>}
     <main className="layout">
       <aside className="left-panel" aria-label="Vector search controls">
@@ -213,20 +239,31 @@ export default function Dashboard() {
         <Section title="Category Legend"><div className="legend">{CATEGORIES.map(c => <div key={c.id} className="leg-row"><span className="dot" style={{ background: COLORS[c.id], boxShadow: `0 0 5px ${COLORS[c.id]}` }} />{c.label}</div>)}</div></Section>
         <Section title="Insert Demo Vector" className="insert-section"><form className="panel-stack" onSubmit={e => { e.preventDefault(); void insertVector(); }}><input type="text" aria-label="Vector description" placeholder="Description…" value={metadata} maxLength={1000} onChange={e => setMetadata(e.target.value)} /><select aria-label="Vector category" value={category} onChange={e => setCategory(e.target.value as Category)}>{CATEGORIES.filter(c => c.id !== 'doc').map(c => <option value={c.id} key={c.id}>{c.label}</option>)}</select><button className="btn-s" disabled={!!busy}>{busy === 'insert' ? 'INSERTING…' : '+ INSERT'}</button></form></Section>
         <Section title="Benchmark"><button className="btn-s" onClick={() => void runBenchmark()} disabled={!!busy}>{busy === 'benchmark' ? 'COMPARING…' : '▶ COMPARE ALL ALGOS'}</button></Section>
-        <p className="muted">Session storage · inserted data resets when the API restarts.</p>
+        <p className="muted">Private storage · documents, vectors and chats persist across restarts.</p>
       </aside>
-      <ScatterPlot items={items} hitIds={hitIds} hoverId={hoverId} queryLabel={queryLabel} loaded={loaded} />
+      {tab!=='rag'&&<ScatterPlot items={items} hitIds={hitIds} hoverId={hoverId} queryLabel={queryLabel} loaded={loaded} />}
+      {tab==='rag'&&(<Section title="Query source projection" className="rag-projection">
+            <ScatterPlot items={items} hitIds={sourceMarkerIds} hoverId={null} queryLabel={sourceProjection?.question??''} loaded={loaded}/>
+            <div className="projection-summary" role="status">
+              {sourceProjection?<>
+                <strong>Query: {sourceProjection.question}</strong>
+                <p>{sourceProjection.state==='loading'?'Retrieving sources and generating the answer...':sourceProjection.state==='failed'?'Query failed or was interrupted. Retry to retrieve its sources.':sourceMarkerIds.length?`${sourceMarkerIds.length} source document(s) highlighted. Lines connect the query to retrieved documents.`:projectionSources.length?'Saved sources are no longer on the current map. Their citation snapshots remain available.':'No document sources matched this answer.'}</p>
+                {projectionSources.length>0&&<ul>{projectionSources.map(source=><li key={source.id}>{source.title} · chunk {source.id} · {sourcePageLabel(source)}{documents.some(chunk=>chunk.id===source.id)?'':' · Saved source (deleted)'}</li>)}</ul>}
+              </>:<p>Ask a question to highlight its retrieved documents here. Select an answer or citation to inspect earlier sources.</p>}
+            </div>
+          </Section>)}
+
       <aside className="right-panel" aria-label="Results and documents">
         <div className="tabs" role="tablist" aria-label="Workspace tabs">{(['search', 'docs', 'rag'] as const).map((value, i) => <button key={value} role="tab" id={`tab-button-${value}`} aria-selected={tab === value} aria-controls={`panel-${value}`} tabIndex={tab === value ? 0 : -1} className={`tab ${tab === value ? 'on' : ''}`} onClick={() => setTab(value)} onKeyDown={event => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const values = ['search', 'docs', 'rag'] as const; const next = values[(i + (event.key === 'ArrowRight' ? 1 : 2)) % 3]; setTab(next); document.getElementById(`tab-button-${next}`)?.focus(); } }}>{['SEARCH', 'DOCUMENTS', 'ASK AI'][i]}</button>)}</div>
         <div id="panel-search" role="tabpanel" aria-labelledby="tab-button-search" className={`tab-content ${tab === 'search' ? 'on' : ''}`}>
           <Section title="Search Latency"><div className="lat-big">{result ? latency(result.latencyUs) : '—'}</div><div className="lat-sub">{result ? `${result.algo.toUpperCase()} · ${result.metric} · k=${k}` : 'No query yet'}</div></Section>
           <Section title="Top Matches"><div className="results">{result ? result.results.length ? result.results.map((hit, i) => <article key={hit.id} className="rcard" onMouseEnter={() => setHoverId(hit.id)} onMouseLeave={() => setHoverId(null)}><div className="rrank">#{i + 1} NEAREST</div><p className="rmeta">{hit.metadata}</p><div className="rfoot"><span className="rcat" style={{ background: COLORS[hit.category] + '18', color: COLORS[hit.category], border: `1px solid ${COLORS[hit.category]}44` }}>{hit.category.toUpperCase()}</span><span className="rdist">dist: {hit.distance.toFixed(5)}</span><button className="del" aria-label={`Delete vector ${hit.metadata}`} title={hit.documentId ? 'Remove map marker only; delete chunks in Documents' : 'Delete vector'} disabled={!!busy} onClick={() => void deleteVector(hit.id)}>×</button></div></article>) : <p className="muted">No results. Insert a vector to get started.</p> : <p className="muted">Run a search to see results…</p>}</div></Section>
           <Section title="Query Embedding (16D)"><EmbeddingChart embedding={embedding} /></Section>
-          {benchmark && <Section title="Algorithm Comparison"><div className="bench">{[{ label: 'Brute Force', value: benchmark.bruteforceUs, color: '#f38ba8' }, { label: 'KD-Tree', value: benchmark.kdtreeUs, color: '#89dceb' }, { label: 'HNSW', value: benchmark.hnswUs, color: '#b388ff' }].map(row => <div className="brow" key={row.label}><div className="blabel"><span style={{ color: row.color }}>{row.label}</span><span>{latency(row.value)}</span></div><div className="btrack"><div className="bfill" style={{ width: `${Math.max(2, row.value / Math.max(benchmark.bruteforceUs, benchmark.kdtreeUs, benchmark.hnswUs, .001) * 100)}%`, background: row.color }} /></div></div>)}</div><p className="muted" style={{ marginTop: 8 }}>Median of 21 runs after warm-up · {benchmark.itemCount} vectors · search time only</p></Section>}
+          {benchmark && <Section title="Algorithm Comparison"><div className="bench">{[{ label: 'Brute Force', value: benchmark.bruteforceUs, color: '#f38ba8' }, { label: 'KD-Tree', value: benchmark.kdtreeUs, color: '#89dceb' }, { label: 'HNSW', value: benchmark.hnswUs, color: '#b388ff' }].map(row => <div className="brow" key={row.label}><div className="blabel"><span style={{ color: row.color }}>{row.label}</span><span>{latency(row.value)}</span></div><div className="btrack"><div className="bfill" style={{ width: `${Math.max(2, row.value / Math.max(benchmark.bruteforceUs, benchmark.kdtreeUs, benchmark.hnswUs, .001) * 100)}%`, background: row.color }} /></div></div>)}</div><p className="muted mt-2">Median of 21 runs after warm-up · {benchmark.itemCount} vectors · search time only</p></Section>}
           <Section title="HNSW Graph Layers"><div className="layers">{graph ? graph.nodeCount ? graph.nodesPerLayer.map((count, i) => <div key={i} className="lrow"><span className="lnum">L{i}</span><div className="ltrack"><div className="lfill" style={{ width: `${Math.max(2, count / Math.max(1, graph.nodesPerLayer[0]) * 100)}%` }} /></div><span className="lcount">{count}n · {graph.edgesPerLayer[i]}e</span></div>) : <p className="muted">Empty index</p> : <p className="muted">Loading…</p>}</div></Section>
         </div>
         <div id="panel-docs" role="tabpanel" aria-labelledby="tab-button-docs" className={`tab-content ${tab === 'docs' ? 'on' : ''}`}>
-          <Section title="Ollama Status"><div className={`ollama-status ${status?.modelsReady ? 'ok' : 'err'}`}><div className="status-head"><span style={{ color: status?.modelsReady ? 'var(--green)' : 'var(--red)' }}>● {status ? status.modelsReady ? 'Ready' : status.ollamaAvailable ? 'Models missing' : 'Offline' : 'Checking…'}</span><button className="status-refresh" disabled={!!busy} onClick={() => void perform('status', async () => { await Promise.all([refreshStatus(), refreshData()]); })}>Refresh</button></div><dl className="status-grid"><dt>Embed</dt><dd>{status?.embedModel || 'nomic-embed-text'}</dd><dt>Generate</dt><dd>{status?.genModel || 'llama3.2'}</dd><dt>Dimensions</dt><dd>{status?.docDims || 'Set on first insert'}</dd><dt>Chunks</dt><dd>{documents.length}</dd></dl>{status && !status.modelsReady && <p className="muted" style={{ marginTop: 8 }}>Start Ollama and install the models:<br /><code>ollama pull {status.embedModel}</code><br /><code>ollama pull {status.genModel}</code></p>}</div></Section>
+          <Section title="Ollama Status"><div className={`ollama-status ${status?.modelsReady ? 'ok' : 'err'}`}><div className="status-head"><span className={status?.modelsReady ? 'text-success' : 'text-danger'}>● {status ? status.modelsReady ? 'Ready' : status.ollamaAvailable ? 'Models missing' : 'Offline' : 'Checking…'}</span><button className="status-refresh" disabled={!!busy} onClick={() => void perform('status', async () => { await Promise.all([refreshStatus(), refreshData()]); })}>Refresh</button></div><dl className="status-grid"><dt>Embed</dt><dd>{status?.embedModel || 'nomic-embed-text'}</dd><dt>Generate</dt><dd>{status?.genModel || 'llama3.2'}</dd><dt>Dimensions</dt><dd>{status?.docDims || 'Set on first insert'}</dd><dt>Chunks</dt><dd>{documents.length}</dd></dl>{status && !status.modelsReady && <p className="muted mt-2">Start Ollama and install the models:<br /><code>ollama pull {status.embedModel}</code><br /><code>ollama pull {status.genModel}</code></p>}</div></Section>
           <Section title="Add a document">
             <form
               className="panel-stack"
@@ -347,8 +384,8 @@ export default function Dashboard() {
               )}
 
               <p className="muted">
-                Scanned PDFs need OCR first. Documents stay available until
-                the backend restarts.
+                Scanned PDFs need OCR first. Documents are saved privately and
+                remain available after server restarts.
               </p>
 
               {insertStatus && (
@@ -367,11 +404,81 @@ export default function Dashboard() {
               )}
             </form>
           </Section>
-          <Section title={`Stored Chunks (${documents.length})`}><div className="doc-list">{documents.length ? documents.map(doc => <article className="dcard" key={doc.id}><p className="dcard-title">{doc.title}</p><p className="dcard-preview">{doc.preview}</p><div className="dcard-foot"><span className="dcard-words">{doc.words} words</span><button className="del" disabled={!!busy} aria-label={`Delete chunk ${doc.title}`} onClick={() => void deleteDocument(doc.id)}>×</button></div></article>) : <p className="muted">No documents yet. Insert some above.</p>}</div></Section>
+          <Section title={`Stored Chunks (${documents.length})`}><div className="doc-list">{documents.length ? documents.map(doc => <article className="dcard" key={doc.id}><p className="dcard-title">{doc.title}</p><p className="dcard-preview">{doc.preview}</p><div className="dcard-foot">
+            <span className="dcard-words">
+              {doc.words} words
+              {doc.pageStart != null && doc.pageEnd != null
+                ? ` · ${sourcePageLabel(doc)}`
+                : ""}
+            </span><button className="del" disabled={!!busy} aria-label={`Delete chunk ${doc.title}`} onClick={() => void deleteDocument(doc.id)}>×</button></div></article>) : <p className="muted">No documents yet. Insert some above.</p>}</div></Section>
         </div>
         <div id="panel-rag" role="tabpanel" aria-labelledby="tab-button-rag" className={`tab-content ${tab === 'rag' ? 'on' : ''}`}>
-          <Section title="Ask a Question"><form className="panel-stack" onSubmit={e => { e.preventDefault(); void askAI(); }}><textarea aria-label="Question for AI" placeholder="What is dynamic programming?" rows={3} value={question} maxLength={10000} onChange={e => setQuestion(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void askAI(); } }} /><div className="inline-row"><select aria-label="Retrieved chunks" value={ragK} disabled={!!busy} onChange={e => setRagK(Number(e.target.value))}>{[2, 3, 5].map(n => <option key={n} value={n}>Top {n}</option>)}</select><button className="btn-g" disabled={!!busy}>{busy === 'ask' ? 'THINKING…' : '🤖 ASK AI'}</button></div><p className="muted">Uses your documents when relevant; otherwise the local model may answer from general knowledge.</p></form></Section>
-          <Section title="Conversation"><div className="chat-history" aria-live="polite">{asked && <p className="chat-q">{asked}</p>}{busy === 'ask' && <div className="thinking" role="status"><span className="spinner" />Retrieving context & generating answer…</div>}{answer && <article className="chat-a"><div className="chat-a-label">🤖 {answer.model}</div><TypedAnswer text={answer.answer} /><div className="chat-ctx"><div className="chat-ctx-label">RETRIEVED CONTEXT ({answer.contexts.length} chunks)</div>{answer.contexts.map((context, i) => <details key={context.id}><summary className="ctx-chip">#{i + 1} {context.title} · {context.distance.toFixed(3)}</summary><p className="ctx-expand">{context.text}</p></details>)}{!answer.contexts.length && <p className="muted">No document chunks met the similarity threshold. This answer uses general knowledge.</p>}</div></article>}{!asked && <p className="muted">Ask a question about your inserted documents…</p>}</div></Section>
+          <Section title="Search in documents">
+            <div className="document-picker">
+              <div className="document-picker-head">
+                <span>
+                  {selectedDocumentIds.length
+                    ? `${selectedDocumentIds.length} selected`
+                    : "All documents"}
+                </span>
+
+                {selectedDocumentIds.length > 0 && (
+                  <button
+                    type="button"
+                    className="document-picker-reset"
+                    disabled={!!busy}
+                    onClick={() => {
+                      setSelectedDocumentIds([]);
+                      setHitIds([]);
+                      setQueryLabel("");
+                    }}
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
+
+              {availableDocuments.length ? (
+                <div className="document-picker-list">
+                  {availableDocuments.map(document => (
+                    <label
+                      key={document.id}
+                      className="document-picker-item"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedDocumentIds.includes(document.id)}
+                        disabled={
+                          !!busy ||
+                          (
+                            selectedDocumentIds.length >= 100 &&
+                            !selectedDocumentIds.includes(document.id)
+                          )
+                        }
+                        onChange={() => toggleDocument(document.id)}
+                      />
+
+                      <span>{document.title}</span>
+
+                      <small>#{document.id}</small>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">
+                  Upload a PDF or add notes from the Documents tab.
+                </p>
+              )}
+
+              <p className="muted">
+                {selectedDocumentIds.length
+                  ? "Retrieval is limited to your selected documents."
+                  : "No selection means search across all documents."}
+              </p>
+            </div>
+          </Section>
+          <ChatPanel documentIds={selectedDocumentIds} onProjectionChange={setSourceProjection}/>
+
         </div>
       </aside>
     </main>

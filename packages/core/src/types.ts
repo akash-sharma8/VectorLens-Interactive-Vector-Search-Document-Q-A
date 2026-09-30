@@ -60,6 +60,9 @@ export interface DocSummary {
   title: string;
   preview: string;
   words: number;
+
+  pageStart?: number | null;
+  pageEnd?: number | null;
 }
 
 export interface Context {
@@ -68,6 +71,9 @@ export interface Context {
   title: string;
   text: string;
   distance: number;
+
+  pageStart?: number | null;
+  pageEnd?: number | null;
 }
 
 export interface Answer {
@@ -75,6 +81,9 @@ export interface Answer {
   model: string;
   contexts: Context[];
   docCount: number;
+
+  documentsOnly?: boolean;
+  generated?: boolean;
 }
 
 export interface Status {
