@@ -1,10 +1,10 @@
 # Vector Database & Local RAG System (TypeScript)
 
-> **📺 Watch Live Demo:** [Insert your YouTube/Loom video link here]
-> 
-> *Alternatively, drag and drop your `2026-10-01 23-29-08.mp4` file right here in the GitHub editor to embed it automatically!*
+[![Watch the Demo](https://img.youtube.com/vi/fUqzYGYTX2k/maxresdefault.jpg)](https://youtu.be/fUqzYGYTX2k)
 
-A full-stack, from-scratch implementation of a **Vector Database** and **Retrieval-Augmented Generation (RAG)** system built entirely on a modern Node.js/TypeScript stack. 
+> 📺 **[Watch Full Demo on YouTube](https://youtu.be/fUqzYGYTX2k)** — See HNSW Search, PCA Visualization, and Local RAG in action.
+
+A full-stack, from-scratch implementation of a **Vector Database** and **Retrieval-Augmented Generation (RAG)** system built entirely on a modern Node.js/TypeScript stack.
 
 This project goes beyond using "black-box" APIs by implementing core algorithms like **HNSW, KD-Tree, and distance metrics** from scratch, while integrating a 100% local, privacy-first AI engine using Ollama.
 
