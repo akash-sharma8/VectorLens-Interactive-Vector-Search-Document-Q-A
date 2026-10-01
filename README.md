@@ -4,7 +4,7 @@
 > 
 > *Alternatively, drag and drop your `2026-10-01 23-29-08.mp4` file right here in the GitHub editor to embed it automatically!*
 
-A full-stack, from-scratch implementation of a **Vector Database** and **Retrieval-Augmented Generation (RAG)** system. Originally migrated from a C++ architecture to a modern Node.js/TypeScript stack. 
+A full-stack, from-scratch implementation of a **Vector Database** and **Retrieval-Augmented Generation (RAG)** system built entirely on a modern Node.js/TypeScript stack. 
 
 This project goes beyond using "black-box" APIs by implementing core algorithms like **HNSW, KD-Tree, and distance metrics** from scratch, while integrating a 100% local, privacy-first AI engine using Ollama.
 
@@ -152,26 +152,6 @@ Supported algorithms: `bruteforce`, `kdtree`, `hnsw`. Metrics: `cosine`, `euclid
 
 Input limits: 1 MB JSON body, 200,000 text characters, at most 100 chunks per insertion, 500-character document title, 1,000-character vector description, 10,000-character question. Demo vectors must contain exactly 16 finite values with magnitude at most 1,000,000.
 
-## What changed from the C++ project
-
-| Original behavior / issue                             | TypeScript implementation                                                                 |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Two identical supplied C++ files                      | One modular TypeScript implementation                                                     |
-| Handmade JSON parsing                                 | Express JSON parsing and Zod schemas                                                      |
-| KD-Tree axis pruning also applied to cosine           | Cosine traversal visits both branches for correctness; Euclidean/Manhattan retain pruning |
-| HNSW graph built with cosine, queried with any metric | Dedicated HNSW graph for each selected demo metric                                        |
-| Deletion could leave an unsuitable HNSW entry point   | Rebuild on deletion to retain valid layers and connectivity                               |
-| Partial chunks remained after an embedding failed     | All model calls and dimensions validated before committing a batch                        |
-| Titles matched by prefix to identify map markers      | Explicit `documentId` relationships                                                       |
-| Deleted chunks left orphan visualization markers      | Last-chunk deletion removes the linked marker                                             |
-| Inconsistent HTML escaping                            | React renders user and model strings as text                                              |
-| Random query jitter and PCA initialization            | Repeatable text-seeded jitter and deterministic PCA                                       |
-| One-shot microsecond benchmark                        | Median of 21 timed searches after 5 warm-up runs; UI labels the method                    |
-| Ollama availability only checked service health       | Status checks required model names too                                                    |
-| Legacy `/api/embeddings` request                      | Current `/api/embed` payload, automatic response dimension detection                      |
-| Fixed desktop layout                                  | Original desktop composition plus tablet/mobile layouts                                   |
-
-HNSW remains approximate. The port uses the same style of nearest-M neighbor selection, but a seeded JavaScript generator instead of C++ `mt19937`. Graph shape, timings and floating-point results are not bit-for-bit identical. KD-Tree cosine search sacrifices pruning to give correct results. TypeScript is not expected to match native C++ throughput.
 
 ## Preserved limitations and semantics
 
