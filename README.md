@@ -1,6 +1,18 @@
-# VectorDB — TypeScript migration
+# Vector Database & Local RAG System (TypeScript)
 
-A runnable migration of the supplied **padhowithPratyush / VectorDB — HNSW + RAG** C++ and HTML project. The original dark dashboard, demo dataset, custom search algorithms, vector visualization, document chunking and local Ollama RAG workflow are preserved.
+> **📺 Watch Live Demo:** [Insert your YouTube/Loom video link here]
+> 
+> *Alternatively, drag and drop your `2026-10-01 23-29-08.mp4` file right here in the GitHub editor to embed it automatically!*
+
+A full-stack, from-scratch implementation of a **Vector Database** and **Retrieval-Augmented Generation (RAG)** system. Originally migrated from a C++ architecture to a modern Node.js/TypeScript stack. 
+
+This project goes beyond using "black-box" APIs by implementing core algorithms like **HNSW, KD-Tree, and distance metrics** from scratch, while integrating a 100% local, privacy-first AI engine using Ollama.
+
+## Key Features
+- 🧠 **Custom Vector Engine:** Implements HNSW, KD-Tree, and Brute-force search in raw TypeScript.
+- 📐 **Semantic Metrics:** Calculates Cosine Similarity, Euclidean, and Manhattan distances manually.
+- 🔒 **100% Local RAG Pipeline:** Uses Ollama (`nomic-embed-text` and `llama3.2`) for embeddings and answer generation. No data leaves the local machine, preventing privacy leaks.
+- 👁️ **Visual Vector Space:** Uses PCA (Principal Component Analysis) to project high-dimensional embeddings down to an interactive 2D dashboard for visual understanding.
 
 ## Quick start
 
