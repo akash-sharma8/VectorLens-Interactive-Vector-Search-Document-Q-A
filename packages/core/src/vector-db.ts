@@ -1,16 +1,9 @@
-import type {
-  Algorithm,
-  Benchmark,
-  Category,
-  Metric,
-  SearchResult,
-  VectorItem,
-} from "./types.ts";
+import type { Algorithm, Benchmark, Category, Metric, SearchResult, VectorItem } from './types.ts';
 
-import { assertVector, distances } from "./distance.ts";
-import { BruteForce } from "./brute-force.ts";
-import { KDTree } from "./kd-tree.ts";
-import { HNSW } from "./hnsw.ts";
+import { assertVector, distances } from './distance.ts';
+import { BruteForce } from './brute-force.ts';
+import { KDTree } from './kd-tree.ts';
+import { HNSW } from './hnsw.ts';
 
 export class VectorDB {
   private store = new Map<number, VectorItem>();
@@ -20,9 +13,9 @@ export class VectorDB {
   private kd: KDTree;
 
   private graphs: Record<Metric, HNSW> = {
-    cosine: new HNSW("cosine"),
-    euclidean: new HNSW("euclidean"),
-    manhattan: new HNSW("manhattan"),
+    cosine: new HNSW('cosine'),
+    euclidean: new HNSW('euclidean'),
+    manhattan: new HNSW('manhattan'),
   };
 
   private nextId = 1;
@@ -39,47 +32,47 @@ export class VectorDB {
     return [...this.store.values()];
   }
 
-insert(
-  metadata: string,
-  category: Category,
-  embedding: number[],
-  documentId?: number,
-  persistedId?: number,
-) {
-  assertVector(embedding, this.dims);
+  insert(
+    metadata: string,
+    category: Category,
+    embedding: number[],
+    documentId?: number,
+    persistedId?: number,
+  ) {
+    assertVector(embedding, this.dims);
 
-  const id = persistedId ?? this.nextId;
+    const id = persistedId ?? this.nextId;
 
-  if (!Number.isSafeInteger(id) || id < 1) {
-    throw new Error("Invalid vector ID.");
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw new Error('Invalid vector ID.');
+    }
+
+    if (this.store.has(id)) {
+      throw new Error(`Vector ID ${id} already exists.`);
+    }
+
+    const item: VectorItem = {
+      id,
+      metadata,
+      category,
+      embedding: [...embedding],
+
+      ...(documentId !== undefined ? { documentId } : {}),
+    };
+
+    this.store.set(id, item);
+
+    this.bf.insert(item);
+    this.kd.insert(item);
+
+    for (const graph of Object.values(this.graphs)) {
+      graph.insert(item);
+    }
+
+    this.nextId = Math.max(this.nextId, id + 1);
+
+    return id;
   }
-
-  if (this.store.has(id)) {
-    throw new Error(`Vector ID ${id} already exists.`);
-  }
-
-  const item: VectorItem = {
-    id,
-    metadata,
-    category,
-    embedding: [...embedding],
-
-    ...(documentId !== undefined ? { documentId } : {}),
-  };
-
-  this.store.set(id, item);
-
-  this.bf.insert(item);
-  this.kd.insert(item);
-
-  for (const graph of Object.values(this.graphs)) {
-    graph.insert(item);
-  }
-
-  this.nextId = Math.max(this.nextId, id + 1);
-
-  return id;
-}
 
   remove(id: number) {
     if (!this.store.delete(id)) {
@@ -99,21 +92,21 @@ insert(
   search(
     q: number[],
     k: number,
-    metric: Metric = "cosine",
-    algo: Algorithm = "hnsw",
+    metric: Metric = 'cosine',
+    algo: Algorithm = 'hnsw',
   ): SearchResult {
     assertVector(q, this.dims);
 
     if (!Number.isInteger(k) || k < 1) {
-      throw new Error("k must be a positive integer");
+      throw new Error('k must be a positive integer');
     }
 
     const start = performance.now();
 
     const raw =
-      algo === "bruteforce"
+      algo === 'bruteforce'
         ? this.bf.knn(q, k, distances[metric])
-        : algo === "kdtree"
+        : algo === 'kdtree'
           ? this.kd.knn(q, k, metric)
           : this.graphs[metric].knn(q, k);
 
@@ -145,14 +138,14 @@ insert(
     };
 
     return {
-      bruteforceUs: measure("bruteforce"),
-      kdtreeUs: measure("kdtree"),
-      hnswUs: measure("hnsw"),
+      bruteforceUs: measure('bruteforce'),
+      kdtreeUs: measure('kdtree'),
+      hnswUs: measure('hnsw'),
       itemCount: this.size,
     };
   }
 
-  info(metric: Metric = "cosine") {
+  info(metric: Metric = 'cosine') {
     return this.graphs[metric].info();
   }
 }

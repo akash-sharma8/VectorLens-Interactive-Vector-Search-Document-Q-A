@@ -1,7 +1,7 @@
-import { currentUserId } from "./request-context.ts";
-import { getPool } from "./database.ts";
-import { DEMO_ITEMS } from "@vectordb/core/demo";
-import type { Category } from "@vectordb/core/types";
+import { currentUserId } from './request-context.ts';
+import { getPool } from './database.ts';
+import { DEMO_ITEMS } from '@vectordb/core/demo';
+import type { Category } from '@vectordb/core/types';
 
 export interface StoredVector {
   id: number;
@@ -15,7 +15,7 @@ export async function seedDemoVectors() {
   const client = await getPool().connect();
 
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     const marker = await client.query(
       `
@@ -23,12 +23,13 @@ export async function seedDemoVectors() {
         VALUES ($1, 'complete')
         ON CONFLICT (key) DO NOTHING
         RETURNING key
-      `, ["demo_seed_v1:" + currentUserId()],
+      `,
+      ['demo_seed_v1:' + currentUserId()],
     );
 
     // Already seeded: preserve existing insertions and deletions.
     if (!marker.rows.length) {
-      await client.query("COMMIT");
+      await client.query('COMMIT');
       return;
     }
 
@@ -46,9 +47,9 @@ export async function seedDemoVectors() {
       );
     }
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
   } catch (error) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     throw error;
   } finally {
     client.release();
@@ -56,7 +57,8 @@ export async function seedDemoVectors() {
 }
 
 export async function listStoredVectors(): Promise<StoredVector[]> {
-  const result = await getPool().query<StoredVector>(`
+  const result = await getPool().query<StoredVector>(
+    `
     SELECT
       id,
       metadata,
@@ -66,16 +68,14 @@ export async function listStoredVectors(): Promise<StoredVector[]> {
     FROM demo_vectors
     WHERE user_id=$1
     ORDER BY id
-  `, [currentUserId()]);
+  `,
+    [currentUserId()],
+  );
 
   return result.rows;
 }
 
-export async function saveDemoVector(
-  metadata: string,
-  category: Category,
-  embedding: number[],
-) {
+export async function saveDemoVector(metadata: string, category: Category, embedding: number[]) {
   const result = await getPool().query<{ id: number }>(
     `
       INSERT INTO demo_vectors (
@@ -94,8 +94,8 @@ export async function saveDemoVector(
 
 export async function deleteStoredVector(id: number) {
   const result = await getPool().query(
-    "DELETE FROM demo_vectors WHERE id = $1 AND user_id=$2 RETURNING id",
-    [id,currentUserId()],
+    'DELETE FROM demo_vectors WHERE id = $1 AND user_id=$2 RETURNING id',
+    [id, currentUserId()],
   );
 
   return result.rows.length > 0;

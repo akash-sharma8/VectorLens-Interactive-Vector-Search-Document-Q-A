@@ -1,1 +1,15 @@
-{"compilerOptions":{"target":"ES2022","module":"ESNext","moduleResolution":"Bundler","strict":true,"esModuleInterop":true,"resolveJsonModule":true,"allowImportingTsExtensions":true,"noEmit":true,"skipLibCheck":true,"types":["node"]},"include":["packages/**/*.ts","apps/api/**/*.ts","tests/**/*.ts"]}
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["packages/**/*.ts", "apps/api/**/*.ts", "tests/**/*.ts"]
+}

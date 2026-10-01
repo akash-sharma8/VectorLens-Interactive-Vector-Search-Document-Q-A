@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.next-test/
+coverage/
+test-results/
+playwright-report/
+package-lock.json
+next-env.d.ts
+AGENTS.md
+CLAUDE.md
+# Applied migrations are checksum-verified and must remain byte-for-byte unchanged.
+apps/api/migrations/
+u.txt

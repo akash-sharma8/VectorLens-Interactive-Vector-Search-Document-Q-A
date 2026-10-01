@@ -1,13 +1,9 @@
-import type { Context, DocChunk } from "./types.ts";
-import { assertVector, cosine } from "./distance.ts";
-import { BruteForce } from "./brute-force.ts";
-import { HNSW } from "./hnsw.ts";
+import type { Context, DocChunk } from './types.ts';
+import { assertVector, cosine } from './distance.ts';
+import { BruteForce } from './brute-force.ts';
+import { HNSW } from './hnsw.ts';
 
-export function chunkText(
-  text: string,
-  chunkWords = 250,
-  overlapWords = 30,
-): string[] {
+export function chunkText(text: string, chunkWords = 250, overlapWords = 30): string[] {
   if (
     !Number.isInteger(chunkWords) ||
     !Number.isInteger(overlapWords) ||
@@ -15,7 +11,7 @@ export function chunkText(
     overlapWords < 0 ||
     overlapWords >= chunkWords
   ) {
-    throw new Error("Invalid chunk settings");
+    throw new Error('Invalid chunk settings');
   }
 
   const words = text.trim().split(/\s+/).filter(Boolean);
@@ -30,14 +26,8 @@ export function chunkText(
 
   const chunks: string[] = [];
 
-  for (
-    let i = 0;
-    i < words.length;
-    i += chunkWords - overlapWords
-  ) {
-    chunks.push(
-      words.slice(i, i + chunkWords).join(" "),
-    );
+  for (let i = 0; i < words.length; i += chunkWords - overlapWords) {
+    chunks.push(words.slice(i, i + chunkWords).join(' '));
 
     if (i + chunkWords >= words.length) {
       break;
@@ -50,7 +40,7 @@ export function chunkText(
 export class DocumentDB {
   private store = new Map<number, DocChunk>();
   private bf = new BruteForce();
-  private hnsw = new HNSW("cosine");
+  private hnsw = new HNSW('cosine');
   private nextId = 1;
   private nextDocumentId = 1;
 
@@ -64,16 +54,9 @@ export class DocumentDB {
     return [...this.store.values()];
   }
 
-  insertBatch(
-    title: string,
-    texts: string[],
-    embeddings: number[][],
-  ) {
-    if (
-      !texts.length ||
-      texts.length !== embeddings.length
-    ) {
-      throw new Error("Invalid embedding batch");
+  insertBatch(title: string, texts: string[], embeddings: number[][]) {
+    if (!texts.length || texts.length !== embeddings.length) {
+      throw new Error('Invalid embedding batch');
     }
 
     const dims = this.dims || embeddings[0].length;
@@ -90,10 +73,7 @@ export class DocumentDB {
 
     texts.forEach((text, i) => {
       const id = this.nextId++;
-      const chunkTitle =
-        texts.length > 1
-          ? `${title} [${i + 1}/${texts.length}]`
-          : title;
+      const chunkTitle = texts.length > 1 ? `${title} [${i + 1}/${texts.length}]` : title;
 
       const chunk: DocChunk = {
         id,
@@ -108,7 +88,7 @@ export class DocumentDB {
       const item = {
         id,
         metadata: chunkTitle,
-        category: "doc" as const,
+        category: 'doc' as const,
         embedding: chunk.embedding,
       };
 
@@ -142,27 +122,18 @@ export class DocumentDB {
 
     return {
       documentId: chunk.documentId,
-      lastChunk: !this.all().some(
-        (c) => c.documentId === chunk.documentId,
-      ),
+      lastChunk: !this.all().some((c) => c.documentId === chunk.documentId),
     };
   }
 
-  search(
-    q: number[],
-    k: number,
-    maxDistance = 0.7,
-  ): Context[] {
+  search(q: number[], k: number, maxDistance = 0.7): Context[] {
     if (!this.size) {
       return [];
     }
 
     assertVector(q, this.dims);
 
-    const hits =
-      this.size < 10
-        ? this.bf.knn(q, k, cosine)
-        : this.hnsw.knn(q, k);
+    const hits = this.size < 10 ? this.bf.knn(q, k, cosine) : this.hnsw.knn(q, k);
 
     return hits
       .filter((h) => h.distance <= maxDistance)
@@ -184,13 +155,8 @@ export class DocumentDB {
       id: c.id,
       documentId: c.documentId,
       title: c.title,
-      preview:
-        c.text.slice(0, 120) +
-        (c.text.length > 120 ? "…" : ""),
-      words: c.text
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean).length,
+      preview: c.text.slice(0, 120) + (c.text.length > 120 ? '…' : ''),
+      words: c.text.trim().split(/\s+/).filter(Boolean).length,
     }));
   }
 }

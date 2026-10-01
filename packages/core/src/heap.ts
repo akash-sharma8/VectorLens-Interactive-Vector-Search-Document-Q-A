@@ -50,17 +50,11 @@ export class Heap<T> {
         const l = 2 * i + 1;
         const r = l + 1;
 
-        if (
-          l < a.length &&
-          this.compare(a[l], a[n]) < 0
-        ) {
+        if (l < a.length && this.compare(a[l], a[n]) < 0) {
           n = l;
         }
 
-        if (
-          r < a.length &&
-          this.compare(a[r], a[n]) < 0
-        ) {
+        if (r < a.length && this.compare(a[r], a[n]) < 0) {
           n = r;
         }
 

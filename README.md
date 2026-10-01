@@ -42,16 +42,16 @@ Configure the database before starting. Copy:
 
 API variables:
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | required | PostgreSQL connection string with pgvector |
-| `NODE_ENV` | development | Set `production` behind HTTPS for Secure session cookies |
-| `PORT` | `8080` | API listener port |
-| `HOST` | `127.0.0.1` | API listener host |
-| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama address reachable by the API |
-| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embedding model |
-| `OLLAMA_GEN_MODEL` | `llama3.2` | Generation model |
-| `WEB_ORIGIN` | `http://localhost:3000` | Exact frontend origin for CORS and CSRF validation |
+| Variable             | Default                  | Purpose                                                  |
+| -------------------- | ------------------------ | -------------------------------------------------------- |
+| `DATABASE_URL`       | required                 | PostgreSQL connection string with pgvector               |
+| `NODE_ENV`           | development              | Set `production` behind HTTPS for Secure session cookies |
+| `PORT`               | `8080`                   | API listener port                                        |
+| `HOST`               | `127.0.0.1`              | API listener host                                        |
+| `OLLAMA_BASE_URL`    | `http://127.0.0.1:11434` | Ollama address reachable by the API                      |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text`       | Embedding model                                          |
+| `OLLAMA_GEN_MODEL`   | `llama3.2`               | Generation model                                         |
+| `WEB_ORIGIN`         | `http://localhost:3000`  | Exact frontend origin for CORS and CSRF validation       |
 
 The frontend's server-side `API_ORIGIN` defaults to `http://127.0.0.1:8080`. Browser requests go to the same-origin `/api/*` proxy. Rebuild the frontend after changing `API_ORIGIN` for production.
 
@@ -59,15 +59,15 @@ Do not mix embeddings from different models in a running document collection, ev
 
 ## Scripts
 
-| Command | Action |
-| --- | --- |
-| `npm run dev` | Start both apps with reload |
-| `npm run typecheck` | Check backend, core, tests and frontend TypeScript |
-| `npm test` | Run engine, API and Ollama adapter tests |
-| `npm run build` | Typecheck and create the production Next.js build |
-| `npm start` | Start the API and production frontend after building |
-| `npm run test:http` | Verify cookie auth, Next.js proxy and durable chat/document workflow in an isolated test schema |
-| `npm run test:browser` | Run browser tests against a clearly marked test-only Ollama fixture |
+| Command                | Action                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `npm run dev`          | Start both apps with reload                                                                     |
+| `npm run typecheck`    | Check backend, core, tests and frontend TypeScript                                              |
+| `npm test`             | Run engine, API and Ollama adapter tests                                                        |
+| `npm run build`        | Typecheck and create the production Next.js build                                               |
+| `npm start`            | Start the API and production frontend after building                                            |
+| `npm run test:http`    | Verify cookie auth, Next.js proxy and durable chat/document workflow in an isolated test schema |
+| `npm run test:browser` | Run browser tests against a clearly marked test-only Ollama fixture                             |
 
 To run browser checks:
 
@@ -83,17 +83,17 @@ On Linux, use `export TEST_DATABASE_URL=...` and install Chromium dependencies i
 
 ## Architecture
 
-| Directory | Responsibility |
-| --- | --- |
-| `apps/web/app` | Next.js entry points, original-theme CSS, responsive layout |
-| `apps/web/components/Dashboard.tsx` | Search, documents, Ask AI and UI state |
-| `apps/web/components/ScatterPlot.tsx` | Animated PCA canvas, tooltips, embedding bars |
-| `apps/web/components/api.ts` | Same-origin API requests and error messages |
-| `apps/api/src/app.ts` | Express routes, request validation and RAG orchestration |
-| `apps/api/src/ollama.ts` | Typed Ollama adapter, timeouts and model availability |
-| `apps/api/src/server.ts` | API startup and graceful shutdown |
-| `packages/core/src` | Framework-independent vector engine and shared types |
-| `tests` | Algorithm, API, adapter and browser verification |
+| Directory                             | Responsibility                                              |
+| ------------------------------------- | ----------------------------------------------------------- |
+| `apps/web/app`                        | Next.js entry points, original-theme CSS, responsive layout |
+| `apps/web/components/Dashboard.tsx`   | Search, documents, Ask AI and UI state                      |
+| `apps/web/components/ScatterPlot.tsx` | Animated PCA canvas, tooltips, embedding bars               |
+| `apps/web/components/api.ts`          | Same-origin API requests and error messages                 |
+| `apps/api/src/app.ts`                 | Express routes, request validation and RAG orchestration    |
+| `apps/api/src/ollama.ts`              | Typed Ollama adapter, timeouts and model availability       |
+| `apps/api/src/server.ts`              | API startup and graceful shutdown                           |
+| `packages/core/src`                   | Framework-independent vector engine and shared types        |
+| `tests`                               | Algorithm, API, adapter and browser verification            |
 
 PostgreSQL owns persistent documents, vectors, accounts, sessions and chats. Each authenticated request builds an isolated demo index from its user's rows, keeping private vectors separate and reflecting other workers' changes. For document ingestion, all embeddings are collected and validated before the atomic database transaction; no chunks become visible if a model request fails.
 
@@ -120,21 +120,21 @@ When a document is inserted, the backend also creates one synthetic 16D visualiz
 
 Existing route names and successful response fields remain compatible. New `documentId` and `markerId` fields provide reliable relationships. Validation errors return non-2xx status codes and `{ "error": "..." }`.
 
-| Method | Route | Request |
-| --- | --- | --- |
-| GET | `/items` | List demo vectors |
-| POST | `/insert` | `{metadata, category, embedding: number[16]}` |
-| DELETE | `/delete/:id` | Remove demo vector or map marker |
-| GET | `/search` | `v=comma,separated,vector&k=5&metric=cosine&algo=hnsw` |
-| GET | `/benchmark` | `v=...&k=5&metric=cosine` |
-| GET | `/hnsw-info` | Optional `metric=cosine` |
-| GET | `/stats` | Demo counts and supported algorithms/metrics |
-| GET | `/status` | Ollama/model availability and collection counts |
-| POST | `/doc/insert` | `{title, text}` |
-| GET | `/doc/list` | Chunk titles, previews, word counts and document IDs |
+| Method | Route             | Request                                                 |
+| ------ | ----------------- | ------------------------------------------------------- |
+| GET    | `/items`          | List demo vectors                                       |
+| POST   | `/insert`         | `{metadata, category, embedding: number[16]}`           |
+| DELETE | `/delete/:id`     | Remove demo vector or map marker                        |
+| GET    | `/search`         | `v=comma,separated,vector&k=5&metric=cosine&algo=hnsw`  |
+| GET    | `/benchmark`      | `v=...&k=5&metric=cosine`                               |
+| GET    | `/hnsw-info`      | Optional `metric=cosine`                                |
+| GET    | `/stats`          | Demo counts and supported algorithms/metrics            |
+| GET    | `/status`         | Ollama/model availability and collection counts         |
+| POST   | `/doc/insert`     | `{title, text}`                                         |
+| GET    | `/doc/list`       | Chunk titles, previews, word counts and document IDs    |
 | DELETE | `/doc/delete/:id` | Delete one chunk; clean up its marker on the last chunk |
-| POST | `/doc/search` | `{question, k: 3}` |
-| POST | `/doc/ask` | `{question, k: 3}` |
+| POST   | `/doc/search`     | `{question, k: 3}`                                      |
+| POST   | `/doc/ask`        | `{question, k: 3}`                                      |
 
 Supported algorithms: `bruteforce`, `kdtree`, `hnsw`. Metrics: `cosine`, `euclidean`, `manhattan`. K must be an integer from 1–100 (the demo slider uses 1–10).
 
@@ -142,22 +142,22 @@ Input limits: 1 MB JSON body, 200,000 text characters, at most 100 chunks per in
 
 ## What changed from the C++ project
 
-| Original behavior / issue | TypeScript implementation |
-| --- | --- |
-| Two identical supplied C++ files | One modular TypeScript implementation |
-| Handmade JSON parsing | Express JSON parsing and Zod schemas |
-| KD-Tree axis pruning also applied to cosine | Cosine traversal visits both branches for correctness; Euclidean/Manhattan retain pruning |
-| HNSW graph built with cosine, queried with any metric | Dedicated HNSW graph for each selected demo metric |
-| Deletion could leave an unsuitable HNSW entry point | Rebuild on deletion to retain valid layers and connectivity |
-| Partial chunks remained after an embedding failed | All model calls and dimensions validated before committing a batch |
-| Titles matched by prefix to identify map markers | Explicit `documentId` relationships |
-| Deleted chunks left orphan visualization markers | Last-chunk deletion removes the linked marker |
-| Inconsistent HTML escaping | React renders user and model strings as text |
-| Random query jitter and PCA initialization | Repeatable text-seeded jitter and deterministic PCA |
-| One-shot microsecond benchmark | Median of 21 timed searches after 5 warm-up runs; UI labels the method |
-| Ollama availability only checked service health | Status checks required model names too |
-| Legacy `/api/embeddings` request | Current `/api/embed` payload, automatic response dimension detection |
-| Fixed desktop layout | Original desktop composition plus tablet/mobile layouts |
+| Original behavior / issue                             | TypeScript implementation                                                                 |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Two identical supplied C++ files                      | One modular TypeScript implementation                                                     |
+| Handmade JSON parsing                                 | Express JSON parsing and Zod schemas                                                      |
+| KD-Tree axis pruning also applied to cosine           | Cosine traversal visits both branches for correctness; Euclidean/Manhattan retain pruning |
+| HNSW graph built with cosine, queried with any metric | Dedicated HNSW graph for each selected demo metric                                        |
+| Deletion could leave an unsuitable HNSW entry point   | Rebuild on deletion to retain valid layers and connectivity                               |
+| Partial chunks remained after an embedding failed     | All model calls and dimensions validated before committing a batch                        |
+| Titles matched by prefix to identify map markers      | Explicit `documentId` relationships                                                       |
+| Deleted chunks left orphan visualization markers      | Last-chunk deletion removes the linked marker                                             |
+| Inconsistent HTML escaping                            | React renders user and model strings as text                                              |
+| Random query jitter and PCA initialization            | Repeatable text-seeded jitter and deterministic PCA                                       |
+| One-shot microsecond benchmark                        | Median of 21 timed searches after 5 warm-up runs; UI labels the method                    |
+| Ollama availability only checked service health       | Status checks required model names too                                                    |
+| Legacy `/api/embeddings` request                      | Current `/api/embed` payload, automatic response dimension detection                      |
+| Fixed desktop layout                                  | Original desktop composition plus tablet/mobile layouts                                   |
 
 HNSW remains approximate. The port uses the same style of nearest-M neighbor selection, but a seeded JavaScript generator instead of C++ `mt19937`. Graph shape, timings and floating-point results are not bit-for-bit identical. KD-Tree cosine search sacrifices pruning to give correct results. TypeScript is not expected to match native C++ throughput.
 
@@ -198,6 +198,10 @@ The transfer is atomic and idempotent. The legacy account has no password and ca
 Chat APIs: `POST/GET /conversations`, `GET/POST /conversations/:id/messages`, `PATCH/DELETE /conversations/:id`. Message POST accepts `question`, UUID `requestId`, optional `documentIds`, `documentsOnly`, `k` and explicit `retry`. Each assistant response stores independent source snapshots, so deleting a PDF keeps old citations inspectable with a deleted-source label. Failed/pending messages can be retried with the same ID and settings. Conversation locks serialize generation across API workers; a separate four-connection pool keeps long generations from exhausting normal retrieval connections.
 
 Security references: [OWASP password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html), [CSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
+
+## Code formatting
+
+Run `npm run format` to format the project, or `npm run format:check` to check formatting without changing files. Prettier uses two-space indentation, single quotes and a 100-character target line width. EditorConfig keeps editor whitespace consistent. Generated files and applied SQL migrations are excluded; migration checksums must remain unchanged.
 
 ## Frontend styling
 

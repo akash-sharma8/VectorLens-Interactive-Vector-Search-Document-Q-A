@@ -12,7 +12,6 @@ export function pca2D(embeddings: number[][]): [number, number][] {
   const d = embeddings[0].length;
   const mean = Array(d).fill(0);
 
-
   // mean  of every rows
   for (const row of embeddings) {
     for (let j = 0; j < d; j++) {
@@ -20,16 +19,11 @@ export function pca2D(embeddings: number[][]): [number, number][] {
     }
   }
 
-  // subtract mean from every row or centering 
-  const x = embeddings.map((row) =>
-    row.map((v, j) => v - mean[j]),
-  );
+  // subtract mean from every row or centering
+  const x = embeddings.map((row) => row.map((v, j) => v - mean[j]));
 
   function component(exclude?: number[]) {
-    let v = Array.from(
-      { length: d },
-      (_, i) => Math.sin((i + 1) * 1.37),
-    );
+    let v = Array.from({ length: d }, (_, i) => Math.sin((i + 1) * 1.37));
 
     for (let iter = 0; iter < 200; iter++) {
       const next = Array(d).fill(0);
@@ -43,10 +37,7 @@ export function pca2D(embeddings: number[][]): [number, number][] {
       }
 
       if (exclude) {
-        const dot = next.reduce(
-          (s, a, j) => s + a * exclude[j],
-          0,
-        );
+        const dot = next.reduce((s, a, j) => s + a * exclude[j], 0);
 
         for (let j = 0; j < d; j++) {
           next[j] -= dot * exclude[j];
@@ -60,10 +51,7 @@ export function pca2D(embeddings: number[][]): [number, number][] {
       }
 
       const normalized = next.map((a) => a / norm);
-      const change = normalized.reduce(
-        (s, a, j) => s + (a - v[j]) ** 2,
-        0,
-      );
+      const change = normalized.reduce((s, a, j) => s + (a - v[j]) ** 2, 0);
 
       v = normalized;
 

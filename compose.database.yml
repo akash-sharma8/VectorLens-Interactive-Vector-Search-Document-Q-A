@@ -11,13 +11,13 @@ services:
       POSTGRES_DB: vectordb
 
     ports:
-      - "127.0.0.1:5433:5432"
+      - '127.0.0.1:5433:5432'
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vectordb -d vectordb"]
+      test: ['CMD-SHELL', 'pg_isready -U vectordb -d vectordb']
       interval: 5s
       timeout: 5s
       retries: 10

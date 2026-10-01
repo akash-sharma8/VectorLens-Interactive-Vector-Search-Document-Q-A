@@ -4,17 +4,14 @@ import { checkDatabase, closeDatabase } from './database.ts';
 const port = Number(process.env.PORT || 8080);
 const host = process.env.HOST || '127.0.0.1';
 
-
 try {
   const info = await checkDatabase();
 
-  console.log(
-    `Database connected: ${info.database} · pgvector ${info.vector_version}`
-  );
+  console.log(`Database connected: ${info.database} · pgvector ${info.vector_version}`);
 } catch (error) {
   console.error(
     'Database startup check failed:',
-    error instanceof Error ? error.message : 'Unknown error'
+    error instanceof Error ? error.message : 'Unknown error',
   );
 
   await closeDatabase();
@@ -25,11 +22,11 @@ const { app, initializeDocuments } = createApp();
 
 try {
   await initializeDocuments();
-  console.log("Saved vectors loaded; search indexes rebuilt.");
+  console.log('Saved vectors loaded; search indexes rebuilt.');
 } catch (error) {
   console.error(
-    "Document initialization failed:",
-    error instanceof Error ? error.message : "Unknown error",
+    'Document initialization failed:',
+    error instanceof Error ? error.message : 'Unknown error',
   );
 
   await closeDatabase();
@@ -59,7 +56,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
     timeout.unref();
 
-    server.close(async error => {
+    server.close(async (error) => {
       try {
         await closeDatabase();
         clearTimeout(timeout);

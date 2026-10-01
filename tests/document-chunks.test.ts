@@ -11,7 +11,7 @@ describe('Document chunk page references', () => {
         { pageNumber: 3, text: 'D E F' },
       ],
       4,
-      1
+      1,
     );
 
     expect(chunks).toEqual([

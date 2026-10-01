@@ -5,9 +5,7 @@ import { getPool, closeDatabase } from './database.ts';
 async function migrate() {
   const directory = new URL('../migrations/', import.meta.url);
 
-  const files = (await readdir(directory))
-    .filter(name => /^\d+.*\.sql$/.test(name))
-    .sort();
+  const files = (await readdir(directory)).filter((name) => /^\d+.*\.sql$/.test(name)).sort();
 
   const client = await getPool().connect();
 
@@ -26,25 +24,19 @@ async function migrate() {
     `);
 
     for (const name of files) {
-      const sql = await readFile(
-        new URL(name, directory),
-        'utf8'
-      );
+      const sql = await readFile(new URL(name, directory), 'utf8');
 
-      const checksum = createHash('sha256')
-        .update(sql)
-        .digest('hex');
+      const checksum = createHash('sha256').update(sql).digest('hex');
 
       const previous = await client.query<{ checksum: string }>(
         'SELECT checksum FROM schema_migrations WHERE name = $1',
-        [name]
+        [name],
       );
 
       if (previous.rows.length) {
         if (previous.rows[0].checksum !== checksum) {
           throw new Error(
-            `${name} was modified after being applied. ` +
-            'Create a new migration instead.'
+            `${name} was modified after being applied. ` + 'Create a new migration instead.',
           );
         }
 
@@ -57,7 +49,7 @@ async function migrate() {
       await client.query(
         `INSERT INTO schema_migrations (name, checksum)
          VALUES ($1, $2)`,
-        [name, checksum]
+        [name, checksum],
       );
 
       console.log(`Applied: ${name}`);
@@ -76,10 +68,7 @@ async function migrate() {
 try {
   await migrate();
 } catch (error) {
-  console.error(
-    'Migration failed:',
-    error instanceof Error ? error.message : 'Unknown error'
-  );
+  console.error('Migration failed:', error instanceof Error ? error.message : 'Unknown error');
 
   process.exitCode = 1;
 } finally {

@@ -1,12 +1,7 @@
-import type {
-  GraphInfo,
-  Metric,
-  Neighbor,
-  VectorItem,
-} from "./types.ts";
-import { distances } from "./distance.ts";
-import { Heap } from "./heap.ts";
-import { compareNeighbors } from "./brute-force.ts";
+import type { GraphInfo, Metric, Neighbor, VectorItem } from './types.ts';
+import { distances } from './distance.ts';
+import { Heap } from './heap.ts';
+import { compareNeighbors } from './brute-force.ts';
 
 interface Node {
   item: VectorItem;
@@ -22,30 +17,18 @@ export class HNSW {
   private seed = 42;
 
   constructor(
-    private metric: Metric = "cosine",
+    private metric: Metric = 'cosine',
     private M = 16,
     private efBuild = 200,
   ) {}
 
   private level() {
-    this.seed =
-      (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
+    this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
 
-    return Math.min(
-      32,
-      Math.floor(
-        -Math.log((this.seed + 1) / 4294967297) /
-          Math.log(this.M),
-      ),
-    );
+    return Math.min(32, Math.floor(-Math.log((this.seed + 1) / 4294967297) / Math.log(this.M)));
   }
 
-  private searchLayer(
-    q: number[],
-    ep: number,
-    ef: number,
-    layer: number,
-  ): Neighbor[] {
+  private searchLayer(q: number[], ep: number, ef: number, layer: number): Neighbor[] {
     const entry = this.graph.get(ep);
 
     if (!entry) {
@@ -59,9 +42,7 @@ export class HNSW {
     };
 
     const candidates = new Heap<Neighbor>(compareNeighbors);
-    const found = new Heap<Neighbor>(
-      (a, b) => -compareNeighbors(a, b),
-    );
+    const found = new Heap<Neighbor>((a, b) => -compareNeighbors(a, b));
 
     const visited = new Set([ep]);
 
@@ -71,10 +52,7 @@ export class HNSW {
     while (candidates.size) {
       const current = candidates.pop()!;
 
-      if (
-        found.size >= ef &&
-        current.distance > found.peek().distance
-      ) {
+      if (found.size >= ef && current.distance > found.peek().distance) {
         break;
       }
 
@@ -96,10 +74,7 @@ export class HNSW {
           distance: dist(q, node.item.embedding),
         };
 
-        if (
-          found.size < ef ||
-          compareNeighbors(hit, found.peek()) < 0
-        ) {
+        if (found.size < ef || compareNeighbors(hit, found.peek()) < 0) {
           candidates.push(hit);
           found.push(hit);
 
@@ -131,21 +106,11 @@ export class HNSW {
     let ep = this.entry;
 
     for (let l = this.top; l > level; l--) {
-      ep = this.searchLayer(
-        item.embedding,
-        ep,
-        1,
-        l,
-      )[0]?.id ?? ep;
+      ep = this.searchLayer(item.embedding, ep, 1, l)[0]?.id ?? ep;
     }
 
     for (let l = Math.min(level, this.top); l >= 0; l--) {
-      const found = this.searchLayer(
-        item.embedding,
-        ep,
-        this.efBuild,
-        l,
-      );
+      const found = this.searchLayer(item.embedding, ep, this.efBuild, l);
 
       const max = l === 0 ? this.M * 2 : this.M;
       const selected = found.slice(0, max).map((x) => x.id);
@@ -162,10 +127,7 @@ export class HNSW {
           n.neighbors[l] = links
             .map((i) => ({
               id: i,
-              distance: distances[this.metric](
-                n.item.embedding,
-                this.graph.get(i)!.item.embedding,
-              ),
+              distance: distances[this.metric](n.item.embedding, this.graph.get(i)!.item.embedding),
             }))
             .sort(compareNeighbors)
             .slice(0, max)
@@ -190,20 +152,10 @@ export class HNSW {
     let ep = this.entry;
 
     for (let l = this.top; l > 0; l--) {
-      ep = this.searchLayer(
-        q,
-        ep,
-        1,
-        l,
-      )[0]?.id ?? ep;
+      ep = this.searchLayer(q, ep, 1, l)[0]?.id ?? ep;
     }
 
-    return this.searchLayer(
-      q,
-      ep,
-      Math.max(k, ef),
-      0,
-    ).slice(0, k);
+    return this.searchLayer(q, ep, Math.max(k, ef), 0).slice(0, k);
   }
 
   remove(id: number) {
@@ -212,9 +164,7 @@ export class HNSW {
     }
 
     // Rebuild the educational index to retain valid upper layers and connectivity.
-    const remaining = [...this.graph.values()]
-      .filter((n) => n.item.id !== id)
-      .map((n) => n.item);
+    const remaining = [...this.graph.values()].filter((n) => n.item.id !== id).map((n) => n.item);
 
     this.graph.clear();
     this.entry = -1;
@@ -230,12 +180,8 @@ export class HNSW {
     const out: GraphInfo = {
       topLayer: this.top,
       nodeCount: this.graph.size,
-      nodesPerLayer: Array(
-        Math.max(1, this.top + 1),
-      ).fill(0),
-      edgesPerLayer: Array(
-        Math.max(1, this.top + 1),
-      ).fill(0),
+      nodesPerLayer: Array(Math.max(1, this.top + 1)).fill(0),
+      edgesPerLayer: Array(Math.max(1, this.top + 1)).fill(0),
       nodes: [],
       edges: [],
     };

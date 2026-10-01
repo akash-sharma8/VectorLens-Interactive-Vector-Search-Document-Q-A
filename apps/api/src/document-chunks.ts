@@ -15,7 +15,7 @@ export function prepareChunks(
   text: string,
   pages?: SourcePage[],
   chunkWords = 250,
-  overlapWords = 30
+  overlapWords = 30,
 ): PreparedChunk[] {
   if (
     !Number.isInteger(chunkWords) ||
@@ -36,13 +36,8 @@ export function prepareChunks(
     let previousPage = 0;
 
     for (const page of pages) {
-      if (
-        !Number.isInteger(page.pageNumber) ||
-        page.pageNumber <= previousPage
-      ) {
-        throw new Error(
-          'PDF page numbers must be positive and increasing.'
-        );
+      if (!Number.isInteger(page.pageNumber) || page.pageNumber <= previousPage) {
+        throw new Error('PDF page numbers must be positive and increasing.');
       }
 
       previousPage = page.pageNumber;
@@ -72,7 +67,7 @@ export function prepareChunks(
 
     chunks.push({
       chunkIndex: chunks.length,
-      text: selected.map(word => word.value).join(' '),
+      text: selected.map((word) => word.value).join(' '),
       wordCount: selected.length,
       pageStart: selected[0].pageNumber,
       pageEnd: selected[selected.length - 1].pageNumber,

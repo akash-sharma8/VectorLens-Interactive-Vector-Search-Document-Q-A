@@ -1,2 +1,4 @@
 import AuthGate from '../../components/AuthGate';
-export default function Page(){return <AuthGate initialMode="register"/>;}
+export default function Page() {
+  return <AuthGate initialMode="register" />;
+}

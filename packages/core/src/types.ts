@@ -1,8 +1,8 @@
-export type Metric = "cosine" | "euclidean" | "manhattan";
+export type Metric = 'cosine' | 'euclidean' | 'manhattan';
 
-export type Algorithm = "bruteforce" | "kdtree" | "hnsw";
+export type Algorithm = 'bruteforce' | 'kdtree' | 'hnsw';
 
-export type Category = "cs" | "math" | "food" | "sports" | "doc";
+export type Category = 'cs' | 'math' | 'food' | 'sports' | 'doc';
 
 export interface VectorItem {
   id: number;

@@ -1,7 +1,7 @@
-import type { Metric, Neighbor, VectorItem } from "./types.ts";
-import { distances } from "./distance.ts";
-import { Heap } from "./heap.ts";
-import { compareNeighbors } from "./brute-force.ts";
+import type { Metric, Neighbor, VectorItem } from './types.ts';
+import { distances } from './distance.ts';
+import { Heap } from './heap.ts';
+import { compareNeighbors } from './brute-force.ts';
 
 interface Node {
   item: VectorItem;
@@ -28,10 +28,9 @@ export class KDTree {
 
     while (true) {
       const key =
-        item.embedding[n.depth % this.dims] <
-        n.item.embedding[n.depth % this.dims]
-          ? "left"
-          : "right";
+        item.embedding[n.depth % this.dims] < n.item.embedding[n.depth % this.dims]
+          ? 'left'
+          : 'right';
 
       const next = n[key];
 
@@ -60,9 +59,7 @@ export class KDTree {
       return [];
     }
 
-    const heap = new Heap<Neighbor>(
-      (a, b) => -compareNeighbors(a, b),
-    );
+    const heap = new Heap<Neighbor>((a, b) => -compareNeighbors(a, b));
 
     // Deferred branches are evaluated after the near branch tightens the radius.
     const stack: { node: Node; bound: number }[] = [
@@ -75,11 +72,7 @@ export class KDTree {
     while (stack.length) {
       const { node: n, bound } = stack.pop()!;
 
-      if (
-        metric !== "cosine" &&
-        heap.size >= k &&
-        bound > heap.peek().distance
-      ) {
+      if (metric !== 'cosine' && heap.size >= k && bound > heap.peek().distance) {
         continue;
       }
 
@@ -88,10 +81,7 @@ export class KDTree {
         distance: distances[metric](q, n.item.embedding),
       };
 
-      if (
-        heap.size < k ||
-        compareNeighbors(hit, heap.peek()) < 0
-      ) {
+      if (heap.size < k || compareNeighbors(hit, heap.peek()) < 0) {
         heap.push(hit);
 
         if (heap.size > k) {
@@ -99,9 +89,7 @@ export class KDTree {
         }
       }
 
-      const diff =
-        q[n.depth % this.dims] -
-        n.item.embedding[n.depth % this.dims];
+      const diff = q[n.depth % this.dims] - n.item.embedding[n.depth % this.dims];
 
       const near = diff < 0 ? n.left : n.right;
       const far = diff < 0 ? n.right : n.left;

@@ -16,12 +16,15 @@
     "typecheck": "tsc --noEmit && npm run typecheck -w @vectordb/web",
     "test": "vitest run",
     "test:browser": "playwright test",
-    "test:http": "node scripts/http-smoke.mjs"
+    "test:http": "node scripts/http-smoke.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@types/node": "^22.15.0",
     "concurrently": "^9.2.0",
+    "prettier": "3.9.9",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"

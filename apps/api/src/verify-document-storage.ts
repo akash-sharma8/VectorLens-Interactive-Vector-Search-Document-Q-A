@@ -1,35 +1,35 @@
-import { requestContext } from "./request-context.ts";
-import { OllamaClient } from "./ollama.ts";
-import { prepareChunks } from "./document-chunks.ts";
-import { saveDocument } from "./document-repository.ts";
-import { getPool, closeDatabase } from "./database.ts";
+import { requestContext } from './request-context.ts';
+import { OllamaClient } from './ollama.ts';
+import { prepareChunks } from './document-chunks.ts';
+import { saveDocument } from './document-repository.ts';
+import { getPool, closeDatabase } from './database.ts';
 
 async function verify() {
   const ai = new OllamaClient();
 
   const content =
-    "Akash studies Electrical Engineering. " +
-    "A vector database retrieves related text using embeddings.";
+    'Akash studies Electrical Engineering. ' +
+    'A vector database retrieves related text using embeddings.';
 
   const chunks = prepareChunks(content);
   const embeddings: number[][] = [];
 
-  console.log("Generating embeddings with Ollama...");
+  console.log('Generating embeddings with Ollama...');
 
   for (const chunk of chunks) {
     embeddings.push(await ai.embed(chunk.text));
   }
 
   const saved = await saveDocument({
-    title: "Database persistence check",
+    title: 'Database persistence check',
     content,
-    sourceType: "text",
+    sourceType: 'text',
     embeddingModel: ai.embedModel,
     chunks,
     embeddings,
   });
 
-  console.log("Saved:", saved);
+  console.log('Saved:', saved);
 
   // Read the saved rows directly from PostgreSQL.
   const result = await getPool().query(
@@ -53,21 +53,26 @@ async function verify() {
 
   console.table(result.rows);
 
-  console.log(
-    `Verification document saved with ID ${saved.documentId}.`
-  );
+  console.log(`Verification document saved with ID ${saved.documentId}.`);
 }
 
 try {
-  const email=process.argv[2]?.trim().toLowerCase();
-  if(!email) throw new Error('Pass a registered account email: npm run db:verify-storage -w @vectordb/api -- email');
-  const user=(await getPool().query('SELECT id FROM users WHERE email=$1 AND password_hash IS NOT NULL',[email])).rows[0];
-  if(!user) throw new Error('Registered user not found.');
-  await requestContext.run({userId:user.id}, verify);
+  const email = process.argv[2]?.trim().toLowerCase();
+  if (!email)
+    throw new Error(
+      'Pass a registered account email: npm run db:verify-storage -w @vectordb/api -- email',
+    );
+  const user = (
+    await getPool().query('SELECT id FROM users WHERE email=$1 AND password_hash IS NOT NULL', [
+      email,
+    ])
+  ).rows[0];
+  if (!user) throw new Error('Registered user not found.');
+  await requestContext.run({ userId: user.id }, verify);
 } catch (error) {
   console.error(
-    "Storage verification failed:",
-    error instanceof Error ? error.message : "Unknown error",
+    'Storage verification failed:',
+    error instanceof Error ? error.message : 'Unknown error',
   );
 
   process.exitCode = 1;

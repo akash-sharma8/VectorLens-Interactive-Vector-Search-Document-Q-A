@@ -31,21 +31,14 @@ export async function extractPdf(buffer: Buffer) {
       const content = await page.getTextContent();
 
       const text = content.items
-        .map(item =>
-          'str' in item
-            ? item.str + (item.hasEOL ? '\n' : ' ')
-            : ''
-        )
+        .map((item) => ('str' in item ? item.str + (item.hasEOL ? '\n' : ' ') : ''))
         .join('')
         .trim();
 
       characters += text.length + 2;
 
       if (characters > 200000) {
-        throw new ApiError(
-          'PDF is too long. Split it into smaller files.',
-          413
-        );
+        throw new ApiError('PDF is too long. Split it into smaller files.', 413);
       }
 
       pages.push(text);
@@ -55,37 +48,25 @@ export async function extractPdf(buffer: Buffer) {
     const text = pages.join('\n\n').trim();
 
     if (!text) {
-      throw new ApiError(
-        'No selectable text found. Scanned PDFs need OCR first.',
-        422
-      );
+      throw new ApiError('No selectable text found. Scanned PDFs need OCR first.', 422);
     }
 
     return {
-  text,
-  pages: pdf.numPages,
-  pageTexts: pages.map((text, index) => ({
-    pageNumber: index + 1,
-    text,
-  })),
-};
+      text,
+      pages: pdf.numPages,
+      pageTexts: pages.map((text, index) => ({
+        pageNumber: index + 1,
+        text,
+      })),
+    };
   } catch (error) {
     if (error instanceof ApiError) throw error;
 
-    if (
-      error instanceof Error &&
-      error.name === 'PasswordException'
-    ) {
-      throw new ApiError(
-        'This PDF is password-protected. Upload an unlocked copy.',
-        422
-      );
+    if (error instanceof Error && error.name === 'PasswordException') {
+      throw new ApiError('This PDF is password-protected. Upload an unlocked copy.', 422);
     }
 
-    throw new ApiError(
-      'Could not read this PDF. The file may be damaged.',
-      422
-    );
+    throw new ApiError('Could not read this PDF. The file may be damaged.', 422);
   } finally {
     await task.destroy();
   }

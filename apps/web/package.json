@@ -1,1 +1,24 @@
-{"name":"@vectordb/web","private":true,"version":"1.0.0","scripts":{"dev":"next dev","build":"next build","start":"next start","typecheck":"tsc --noEmit"},"dependencies":{"@fontsource/fira-code":"^5.3.0","@vectordb/core":"1.0.0","next":"16.3.5","react":"^19.2.0","react-dom":"^19.2.0"},"devDependencies":{"@tailwindcss/postcss":"^4.1.0","@types/react":"^19.2.0","@types/react-dom":"^19.2.0","tailwindcss":"^4.1.0"}}
+{
+  "name": "@vectordb/web",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/fira-code": "^5.3.0",
+    "@vectordb/core": "1.0.0",
+    "next": "16.3.5",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.0"
+  }
+}

@@ -11,9 +11,16 @@ let chatLockPool: pg.Pool | undefined;
 export function getChatLockPool(): pg.Pool {
   if (!chatLockPool) {
     if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is missing.');
-    chatLockPool = new Pool({ connectionString: process.env.DATABASE_URL, max: 4,
-      connectionTimeoutMillis: 5000, idleTimeoutMillis: 30000, statement_timeout: 10000 });
-    chatLockPool.on('error', error => console.error('Chat database connection error:', error.message));
+    chatLockPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 4,
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 30000,
+      statement_timeout: 10000,
+    });
+    chatLockPool.on('error', (error) =>
+      console.error('Chat database connection error:', error.message),
+    );
   }
   return chatLockPool;
 }
@@ -35,7 +42,7 @@ export function getPool(): pg.Pool {
     statement_timeout: 10000,
   });
 
-  pool.on('error', error => {
+  pool.on('error', (error) => {
     console.error('PostgreSQL idle connection error:', error.message);
   });
 
